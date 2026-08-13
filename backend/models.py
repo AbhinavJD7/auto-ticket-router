@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, Text, Integer, DateTime, Enum, ARRAY
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Text, Integer, DateTime, Enum, JSON, Uuid
 import uuid
 import enum
 from datetime import datetime
@@ -15,7 +14,7 @@ class TicketStatus(str, enum.Enum):
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     client_id = Column(String, index=True)
     title = Column(String, index=True)
     description = Column(Text)
@@ -29,9 +28,9 @@ class Ticket(Base):
 class Agent(Base):
     __tablename__ = "agents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
-    skill_tags = Column(ARRAY(String))  # Array of skills for routing
+    skill_tags = Column(JSON)  # JSON array of skills for routing
     current_load = Column(Integer, default=0)

@@ -1,99 +1,240 @@
-// frontend/src/App.tsx
-import { useEffect, useState } from 'react'
-import axios from 'axios'
-import { Ticket, Activity, Clock } from 'lucide-react'
-
-// Define the TypeScript interfaces matching our Python backend schemas
-interface TicketData {
-  id: string
-  client_id: string
-  title: string
-  description: string
-  category: string
-  urgency: string
-  status: string
-  created_at: string
-  sla_deadline: string
-}
+import { useState, useEffect } from 'react'
+import './App.css'
 
 function App() {
-  const [tickets, setTickets] = useState<TicketData[]>([])
-  const [queueCount, setQueueCount] = useState<number>(0)
+  const [tickets, setTickets] = useState([])
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  
+  // Auth state
+  const [token, setToken] = useState(localStorage.getItem("token") || "")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  
+  // UI State
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  // Fetch data from FastAPI backend when component mounts
+  const fetchQueue = () => {
+    fetch('http://localhost:8000/queue/')
+      .then(res => res.json())
+      .then(data => setTickets(data.queue || []))
+      .catch(err => console.error("Error fetching queue:", err))
+  }
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch all tickets
-        const ticketRes = await axios.get('http://127.0.0.1:8000/tickets/')
-        setTickets(ticketRes.data)
-
-        // Fetch live queue data
-        const queueRes = await axios.get('http://127.0.0.1:8000/queue/')
-        setQueueCount(queueRes.data.queue.length)
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      }
-    }
-
-    fetchData()
+    fetchQueue()
+    const interval = setInterval(fetchQueue, 5000)
+    return () => clearInterval(interval)
   }, [])
 
-  // Helper function to color-code urgency badges
-  const getUrgencyColor = (urgency: string) => {
-    switch(urgency) {
-      case 'critical': return 'red'
-      case 'high': return 'orange'
-      case 'medium': return 'blue'
-      default: return 'gray'
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+    
+    try {
+      const formData = new URLSearchParams()
+      formData.append("username", email)
+      formData.append("password", password)
+
+      const res = await fetch("http://localhost:8000/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) throw new Error(data.detail || "Login failed")
+      
+      setToken(data.access_token)
+      localStorage.setItem("token", data.access_token)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    setToken("")
+    localStorage.removeItem("token")
+  }
+
+  const submitTicket = async () => {
+    const res = await fetch('http://localhost:8000/tickets/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        description,
+        client_id: "GUEST_USER"
+      })
+    })
+    if (res.ok) {
+      setTitle("")
+      setDescription("")
+      fetchQueue()
+    }
+  }
+
+  const claimTicket = async (ticketId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8000/tickets/${ticketId}/claim`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (res.status === 401) {
+        handleLogout()
+        return
+      }
+      
+      if (res.ok) {
+        fetchQueue()
+      } else {
+        const data = await res.json()
+        alert(data.detail)
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      
-      {/* Dashboard Header */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Activity size={32} color="#2563eb" />
-          Support Agent Dashboard
-        </h1>
-        <div style={{ background: '#fef2f2', padding: '10px 20px', borderRadius: '8px', border: '1px solid #fca5a5' }}>
-          <strong>Live Queue:</strong> {queueCount} Tickets Waiting
+    <div className="app-container">
+      <header className="header">
+        <div className="logo">
+          <div className="logo-icon"></div>
+          Router
+        </div>
+        <div className="auth-status">
+          {token ? (
+            <button className="logout-btn" onClick={handleLogout}>Log out</button>
+          ) : (
+            <span className="guest-badge">Client View</span>
+          )}
         </div>
       </header>
+      
+      <main className="main-content">
+        <div className="hero">
+          <h1>The ticket routing system<br/>for modern teams</h1>
+          <p>Purpose-built for speed and accuracy. Designed for the AI era.</p>
+        </div>
 
-      {/* Tickets Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {tickets.map((ticket) => (
-          <div key={ticket.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'white', background: getUrgencyColor(ticket.urgency), padding: '4px 8px', borderRadius: '12px', textTransform: 'uppercase' }}>
-                {ticket.urgency}
-              </span>
-              <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'capitalize' }}>
-                {ticket.category}
-              </span>
+        <div className="dashboard-grid">
+          
+          {/* Left Column: Actions */}
+          <div className="action-column">
+            {!token ? (
+              <div className="panel" style={{ marginBottom: '2rem' }}>
+                <h2>Agent Access</h2>
+                {error && <div className="error-msg">{error}</div>}
+                
+                <form onSubmit={handleLogin} className="form-group">
+                  <input 
+                    type="email" 
+                    placeholder="name@company.com" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <input 
+                    type="password" 
+                    placeholder="Password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="primary-btn" disabled={loading}>
+                    {loading ? "Authenticating..." : "Log in"}
+                  </button>
+                </form>
+              </div>
+            ) : null}
+
+            <div className="panel">
+              <h2>New Issue</h2>
+              <div className="form-group">
+                <input 
+                  placeholder="Issue Title" 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)} 
+                />
+                <textarea 
+                  placeholder="Describe the issue..." 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  rows={4}
+                />
+                <button onClick={submitTicket} className="primary-btn">Create issue</button>
+              </div>
             </div>
-
-            <h3 style={{ margin: '10px 0', fontSize: '18px' }}>{ticket.title}</h3>
-            <p style={{ color: '#4b5563', fontSize: '14px', marginBottom: '15px' }}>{ticket.description}</p>
-            
-            <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '15px 0' }} />
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#6b7280' }}>
-              <span>Client: <strong>{ticket.client_id}</strong></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: ticket.urgency === 'critical' ? 'red' : 'inherit' }}>
-                <Clock size={14} /> 
-                {new Date(ticket.sla_deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-
           </div>
-        ))}
-      </div>
 
+          {/* Right Column: Queue */}
+          <div className="queue-column">
+            <div className="panel">
+              <div className="queue-header">
+                <h2>Priority Queue</h2>
+                <span className="guest-badge">{tickets.length} items</span>
+              </div>
+              
+              <div className="ticket-list">
+                {tickets.map((item: any, i) => (
+                  <div key={i} className="ticket-item">
+                    <div className="ticket-header">
+                      <div>
+                        <div className="ticket-id">ISSUE-{item.ticket.id.split('-')[0].toUpperCase()}</div>
+                        <div className="ticket-title">{item.ticket.title}</div>
+                      </div>
+                      <div className="badges">
+                        <span className={`badge ${item.ticket.urgency.toLowerCase()}`}>
+                          {item.ticket.urgency}
+                        </span>
+                        <span className="badge">
+                          {item.ticket.category}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {item.ticket.description && (
+                      <div className="ticket-desc">{item.ticket.description}</div>
+                    )}
+                    
+                    <div className="ticket-footer">
+                      <div className="score">
+                        Priority: {item.priority_score.toFixed(0)}
+                      </div>
+                      
+                      {token && item.ticket.status === "open" && (
+                        <button 
+                          className="claim-btn"
+                          onClick={() => claimTicket(item.ticket.id)}
+                        >
+                          Claim issue
+                        </button>
+                      )}
+                      {item.ticket.status === "in-progress" && (
+                        <span className="status-label">In progress</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {tickets.length === 0 && (
+                  <div className="empty-state">No issues in the queue.</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   )
 }

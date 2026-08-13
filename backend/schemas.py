@@ -21,7 +21,7 @@ class TicketResponse(TicketBase):
     sla_deadline: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AgentBase(BaseModel):
     name: str
@@ -36,4 +36,12 @@ class AgentResponse(AgentBase):
     current_load: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
