@@ -10,72 +10,57 @@ Built with a modern stack:
 
 ---
 
-## 🛠️ Prerequisites
+## 🚀 Quickstart (Docker)
 
-Before you begin, ensure you have the following installed on your machine:
-- **Python 3.10+**
-- **Node.js 18+** & **npm**
-- **PostgreSQL** (Running locally on default port `5432` with a database named `ticket_router`)
-- **Redis** (Running locally on default port `6379`)
+The fastest way to get the entire stack (Database, Cache, Backend, Frontend) running locally is using Docker.
+
+1. Ensure **Docker** and **Docker Compose** are installed and running on your machine.
+2. Clone the repository and navigate into it.
+3. Run the following command:
+```bash
+docker-compose up --build
+```
+4. Once the containers are healthy, open your browser to: **http://localhost**
+
+*Note: The frontend runs on port 80 and automatically proxies `/api` requests to the backend.*
 
 ---
 
-## 🚀 Local Development Setup
+## 🛠️ Manual Local Development Setup
 
-### 1. Start Redis & PostgreSQL
-Ensure your local Redis server and PostgreSQL database are actively running.
+If you prefer to run the services bare-metal without Docker, follow these steps:
 
+### 1. Prerequisites
+- **Python 3.10+**
+- **Node.js 18+**
+- **PostgreSQL** (Running locally on default port `5432` with a database named `ticket_router`)
+- **Redis** (Running locally on default port `6379`)
+
+### 2. Start Redis & PostgreSQL
 For Mac (using Homebrew):
 ```bash
 brew services start redis
 brew services start postgresql
 ```
 
-*Note: Ensure your PostgreSQL has a local user and a database created. (e.g. `createdb ticket_router`)*
-
-### 2. Backend Setup (FastAPI)
-
-Open a terminal window and navigate to the backend directory:
+### 3. Backend Setup (FastAPI)
 ```bash
 cd backend
-```
-
-Create and activate a virtual environment:
-```bash
-# Mac / Linux
 python3 -m venv venv
 source venv/bin/activate
-```
-
-Install the required Python dependencies:
-```bash
-pip install "fastapi[all]" sqlalchemy psycopg2-binary redis passlib bcrypt python-multipart
-```
-
-Run the backend development server:
-```bash
+pip install -r requirements.txt
 uvicorn main:app --reload
 ```
-The backend API will start on `http://127.0.0.1:8000`.
-You can view the interactive Swagger API documentation at: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+API runs on `http://127.0.0.1:8000`. Docs at `http://127.0.0.1:8000/docs`.
 
-### 3. Frontend Setup (React)
-
-Open a **new, separate** terminal window and navigate to the frontend directory:
+### 4. Frontend Setup (React)
+Open a new terminal window:
 ```bash
 cd frontend
-```
-
-Install the Node modules:
-```bash
 npm install
-```
-
-Start the Vite development server:
-```bash
 npm run dev
 ```
-The frontend application will start on `http://localhost:5173`.
+Frontend runs on `http://localhost:5173`.
 
 ---
 
