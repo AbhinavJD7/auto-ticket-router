@@ -20,13 +20,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+import os
+
 # CORS setup for frontend access
-origins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173"
-]
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173")
+origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -35,10 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Connect to Redis for Priority Queue
-# Note: Ensure you have Redis running locally (default port 6379)
+# Connect to Redis for Priority Queue (using a connection pool)
+# The default REDIS_URL is for local development without Docker.
+# In Docker Compose, this will be "redis".
+REDIS_URL = os.getenv("REDIS_URL", "localhost")
 try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    redis_client = redis.Redis(host=REDIS_URL, port=6379, db=0, decode_responses=True)
 except Exception as e:
     print("Warning: Could not connect to Redis", e)
     redis_client = None

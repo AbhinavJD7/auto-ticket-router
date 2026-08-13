@@ -15,8 +15,10 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+
   const fetchQueue = () => {
-    fetch('http://localhost:8000/queue/')
+    fetch(`${API_URL}/queue/`)
       .then(res => res.json())
       .then(data => setTickets(data.queue || []))
       .catch(err => console.error("Error fetching queue:", err))
@@ -38,7 +40,7 @@ function App() {
       formData.append("username", email)
       formData.append("password", password)
 
-      const res = await fetch("http://localhost:8000/token", {
+      const res = await fetch(`${API_URL}/token`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData
@@ -63,7 +65,7 @@ function App() {
   }
 
   const submitTicket = async () => {
-    const res = await fetch('http://localhost:8000/tickets/', {
+    const res = await fetch(`${API_URL}/tickets/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -81,7 +83,7 @@ function App() {
 
   const claimTicket = async (ticketId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/tickets/${ticketId}/claim`, {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/claim`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
