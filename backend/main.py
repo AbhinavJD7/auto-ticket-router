@@ -130,7 +130,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = create_access_token(data={"sub": agent.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/tickets/", response_model=schemas.TicketResponse)
+@app.post("/tickets", response_model=schemas.TicketResponse)
 def create_ticket(ticket: schemas.TicketCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # 1. Auto-classify
     category, urgency, sla_deadline = auto_classify_ticket(ticket.title, ticket.description)
@@ -153,8 +153,8 @@ def create_ticket(ticket: schemas.TicketCreate, background_tasks: BackgroundTask
     
     return db_ticket
 
-@app.get("/tickets/", response_model=list[schemas.TicketResponse])
-def get_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_agent: models.Agent = Depends(get_current_agent)):
+@app.get("/tickets", response_model=list[schemas.TicketResponse])
+def get_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     tickets = db.query(models.Ticket).offset(skip).limit(limit).all()
     return tickets
 

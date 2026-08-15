@@ -44,3 +44,36 @@ When an agent clicks "Claim" on a ticket in the UI:
 4. **Race Condition Handling:** If `updated_rows == 0`, a 400 Error is returned (another agent claimed it first). If successful, the agent's `current_load` is incremented.
 5. **Redis Cleanup:** The backend scans the Redis `ticket_priority_queue` and removes the ticket payload via `ZREM` so it disappears from the live queue.
 6. **Response:** Success is returned, and the frontend refreshes the view.
+
+---
+
+## 5. Tech Stack & Architectural Justifications (The "Why")
+
+When explaining this architecture in an interview, it is crucial to explain *why* specific tools were chosen over popular alternatives.
+
+### Frontend: React + Vite + Tailwind CSS
+* **React:** Chosen for its component-based architecture which allows us to cleanly separate the `Client Portal` from the `Agent Workspace` while sharing reusable UI components (like buttons and inputs).
+  * *Why not Angular/Vue?* React has a more robust ecosystem, wider community support, and faster onboarding for most developers.
+* **Vite:** Used as the build tool and development server.
+  * *Why not Create React App (CRA) or Webpack?* Vite uses native ES modules to provide blazing-fast Hot Module Replacement (HMR). Changes reflect in the browser instantly, whereas Webpack gets notoriously slow as a project grows.
+* **Tailwind CSS:** A utility-first CSS framework.
+  * *Why not vanilla CSS or Bootstrap?* Vanilla CSS leads to massive, hard-to-maintain stylesheets and naming conflicts. Bootstrap looks generic. Tailwind allows us to build a highly custom, premium dark-mode UI ("Supabase-style") directly inside our JSX without switching context.
+
+### Backend: FastAPI (Python)
+* **FastAPI:** A modern, high-performance web framework for building APIs.
+  * *Why not Django?* Django is a heavy "batteries-included" monolithic framework. Our application is essentially a lightweight microservice/API layer for a SPA (Single Page App). Django is overkill for this.
+  * *Why not Flask?* Flask is lightweight but lacks native asynchronous support and built-in type validation. FastAPI gives us automatic data validation (via Pydantic) and auto-generates Swagger API documentation out of the box, saving hours of manual doc writing.
+
+### Database: PostgreSQL + SQLAlchemy
+* **PostgreSQL:** An advanced, open-source relational database.
+  * *Why not MongoDB (NoSQL)?* Ticket routing involves highly structured data with clear relationships (Agents, Tickets, Statuses). Furthermore, we absolutely require **ACID transactions** to handle concurrency (preventing two agents from claiming the same ticket simultaneously). Relational databases like Postgres excel at strict concurrency control.
+* **SQLAlchemy:** The standard Python Object-Relational Mapper (ORM).
+  * *Why use an ORM?* It prevents SQL injection attacks, allows us to write database queries in Python instead of raw SQL strings, and makes it trivial to swap out the underlying database engine if needed in the future.
+
+### Caching/Queueing: Redis
+* **Redis:** An in-memory key-value data store.
+  * *Why use Redis?* Querying the PostgreSQL database constantly for "live queue" updates is expensive and slow. Redis operates in RAM, allowing for sub-millisecond read/writes, making it the industry standard for fast queue management, rate-limiting, and Pub/Sub functionality.
+
+### Infrastructure: Docker
+* **Docker & Docker Compose:** Used to containerize our external dependencies (Postgres and Redis).
+  * *Why use Docker?* It entirely eliminates the "it works on my machine" problem. Instead of forcing new developers to manually install and configure Postgres and Redis on their specific operating systems, they simply run `docker-compose up -d` and the exact required environments are spun up in isolated containers.

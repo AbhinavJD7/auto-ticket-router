@@ -12,7 +12,7 @@ load_dotenv()
 USER = os.environ.get("USER", "postgres")
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    f"postgresql://{USER}@localhost:5432/ticket_router"
+    "postgresql://postgres:password123@127.0.0.1:5433/ticket_router"
 )
 
 # The Engine is the starting point for any SQLAlchemy application.
