@@ -75,40 +75,34 @@ Frontend runs on `http://localhost:5173`.
 4. **Log In**: Go back to your React dashboard (`http://localhost:5173`) and log in using the email and password you just registered.
 5. **Claim Tickets**: Once logged in, you will see a "Claim issue" button appear on any tickets sitting in the queue. Clicking it will assign the ticket to you and instantly remove it from the Redis queue.
 
+---
+
 ## ☁️ AWS Deployment (Elastic Beanstalk)
 
-This project is fully containerized and configured for AWS Elastic Beanstalk's **Docker (Amazon Linux 2023)** platform, which natively supports `docker-compose.yml`.
+This project is deployed on AWS Elastic Beanstalk's **Docker (Amazon Linux 2023)** platform using the EB CLI.
 
-### Step 1: AWS Managed Databases (Recommended)
-Before deploying the application code, set up your managed data stores on AWS:
-1. **AWS RDS (PostgreSQL)**: Create a free-tier `db.t3.micro` Postgres instance. Note the endpoint URL, username, and password.
-2. **AWS ElastiCache (Redis)**: Create a free-tier `cache.t2.micro` Redis cluster. Note the endpoint URL.
-
-### Step 2: Prepare the Deployment Package
-Elastic Beanstalk expects a `.zip` file of your repository.
+### 1. Install & Authenticate
 ```bash
-# From the root of the project
-zip -r deploy.zip docker-compose.yml frontend/ backend/ -x "*/node_modules/*" -x "*/venv/*" -x "*/__pycache__/*"
+brew install awsebcli
+aws configure
 ```
 
-*Note: In the `docker-compose.yml`, you may want to remove the `postgres` and `redis` service blocks for production, as your containers will connect to your AWS RDS and ElastiCache instances instead.*
+### 2. Initialize and Deploy
+```bash
+# Initialize the Elastic Beanstalk environment
+eb init -p docker <your-app-name> --region <your-region>
 
-### Step 3: Deploy to Elastic Beanstalk
-1. Go to the AWS Elastic Beanstalk Console and click **Create Application**.
-2. Select **Docker** as the platform (Amazon Linux 2023).
-3. Upload your `deploy.zip` file.
-4. **Environment Properties**: In the configuration step, you must inject your production environment variables:
-   - `DATABASE_URL`: `postgresql://<RDS_USER>:<RDS_PASS>@<RDS_ENDPOINT>:5432/ticket_router`
-   - `REDIS_URL`: `<ELASTICACHE_ENDPOINT>`
-   - `JWT_SECRET_KEY`: `<generate a secure random string>`
-   - `ALLOWED_ORIGINS`: `<your_elastic_beanstalk_url>`
-5. Launch the environment! EB will automatically build the `frontend` and `backend` images and wire them up.
+# Create the environment and deploy the containers
+eb create <your-environment-name>
 
-### Step 4: Cleanup & Teardown
-To avoid AWS charges after you are done testing:
-1. Terminate the Elastic Beanstalk Environment via the EB Console.
-2. Delete the RDS PostgreSQL Database.
-3. Delete the ElastiCache Redis Cluster.
+# Set required environment variables
+eb setenv \
+  JWT_SECRET_KEY="<your-secure-secret>" \
+  ALLOWED_ORIGINS="http://<your-environment-cname>.elasticbeanstalk.com"
+
+# Open the live application
+eb open
+```
 
 ---
 

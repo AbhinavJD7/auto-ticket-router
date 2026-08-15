@@ -31,3 +31,8 @@ This document tracks all major architectural and technical decisions made during
 - **Decision:** Use atomic database updates for claiming tickets.
 - **Context/Problem:** Multiple agents might click "Claim" on the same ticket simultaneously, potentially causing a race condition where the ticket is assigned to both.
 - **Rationale:** Instead of a `SELECT` then `UPDATE` pattern, the backend executes an atomic `UPDATE tickets SET status = 'in-progress' WHERE id = ? AND status = 'open'`. If `updated_rows == 0`, it means another agent already claimed it, preventing double-claims.
+
+## 7. Containerization & Hosting
+- **Decision:** Docker Compose & AWS Elastic Beanstalk (Multi-Docker).
+- **Context/Problem:** The app consists of a backend, frontend, PostgreSQL, and Redis. Running these locally requires a lot of manual setup, and deploying four separate services individually is complex and expensive.
+- **Rationale:** Dockerizing everything ensures perfect parity between local development and production. Elastic Beanstalk's Amazon Linux 2023 Docker platform natively supports `docker-compose.yml`, allowing us to host the entire 4-container ecosystem on a single EC2 instance for free-tier simplicity.
