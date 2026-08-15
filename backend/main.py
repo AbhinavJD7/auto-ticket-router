@@ -17,7 +17,8 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Auto Ticket Router API",
     description="Enterprise client support ticket triage system.",
-    version="1.0.0"
+    version="1.0.0",
+    root_path="/api"
 )
 
 import os

@@ -77,3 +77,19 @@ When explaining this architecture in an interview, it is crucial to explain *why
 ### Infrastructure: Docker
 * **Docker & Docker Compose:** Used to containerize our external dependencies (Postgres and Redis).
   * *Why use Docker?* It entirely eliminates the "it works on my machine" problem. Instead of forcing new developers to manually install and configure Postgres and Redis on their specific operating systems, they simply run `docker-compose up -d` and the exact required environments are spun up in isolated containers.
+
+---
+
+## 6. Future Security & Roadmap (Interview Prep)
+
+**Question:** *"Right now, anyone with the API URL can hit `/register` and create an agent account. How would you secure this for production?"*
+
+**Answer:** 
+The current implementation is an MVP designed to demonstrate the core architecture (AI triaging, Redis queueing, atomic database concurrency). In a true enterprise production environment, we would implement the following security layers:
+
+1. **Role-Based Access Control (RBAC):** 
+   The `/register` endpoint would **not** be public. It would be locked down so that only authenticated users possessing an `ADMIN` or `IT` role can hit that endpoint to provision new support agents.
+2. **SSO Integration:** 
+   In a modern enterprise setting, there wouldn't be a `/register` endpoint at all. Support agents would log in via Single Sign-On (SSO) using their corporate credentials (via identity providers like Okta, Azure AD, or AWS Cognito), and their accounts would be auto-provisioned by the IT department.
+3. **Disable Production API Documentation:** 
+   In a live production environment, the OpenAPI/Swagger documentation (`/api/docs`) is typically disabled entirely (by setting `docs_url=None` in FastAPI) or placed securely behind authentication middleware so the general public cannot inspect the API schema or execute unauthorized requests.
