@@ -72,7 +72,9 @@ Frontend runs on `http://localhost:5173`.
    - Go to the API Docs: `http://127.0.0.1:8000/docs`
    - Scroll down to the `POST /register` endpoint.
    - Click "Try it out" and submit a JSON payload with a `name`, `email`, and `password`.
-4. **Log In**: Go back to your React dashboard (`http://localhost:5173`) and log in using the email and password you just registered.
+4. **Log In**: Go back to your React dashboard (`http://localhost:5173`) and log in. For testing purposes, you can use the default test agent:
+   - **Email**: `test@gmail.com`
+   - **Password**: `1234`
 5. **Claim Tickets**: Once logged in, you will see a "Claim issue" button appear on any tickets sitting in the queue. Clicking it will assign the ticket to you and instantly remove it from the Redis queue.
 
 ---
